@@ -185,7 +185,7 @@ SOURCES=mempool.c registry.c rbtree.c hash.c sbox.c utils.c parser.c \
 #CFLAGS += -p -DPROFILE -DPROFILE_FILE=\"$(PROG).profile\"
 
 #Debugging symbols (overrides optimization level)
-#WITH_DEBUG=2
+WITH_DEBUG=2
 ifneq ($(WITH_DEBUG),)
 CFLAGS+= -O$(WITH_DEBUG) -ggdb -fasynchronous-unwind-tables -fvar-tracking
 endif
@@ -312,6 +312,19 @@ packdev:
 	@mkdir -p distrib/$(PACKAGE_DEV)
 	@$(CP) -r $(FILE_LIST) distrib/$(PACKAGE_DEV)
 	@cd distrib ; $(TAR) czf $(ARCHIVE_DEV) $(PACKAGE_DEV)
+
+.PHONY: test
+test: ppc32_test.s ppc32_test.lds
+	@echo "Assembling ppc32_test.s"
+	@powerpc-unknown-elf-as -mbig ppc32_test.s -o ppc32_test.o
+	@echo "Linking ppc32_test.o"
+	@powerpc-unknown-elf-ld -T ppc32_test.lds ppc32_test.o -o ppc32_test
+	@echo "Comparing generated code"
+	@powerpc-unknown-elf-objdump -s -j .text ppc32_test > ppc32_test.objdump.s.j.text.txt
+	-@diff ppc32_microcode.objdump.s.j.text.txt ppc32_test.objdump.s.j.text.txt
+	@powerpc-unknown-elf-objdump -s -j .data ppc32_test > ppc32_test.objdump.s.j.data.txt
+	-@diff ppc32_microcode.objdump.s.j.data.txt ppc32_test.objdump.s.j.data.txt
+
 
 .SUFFIXES: .c .h .S .l .y .o
 
